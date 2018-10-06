@@ -1,0 +1,30 @@
+{
+  "name": "Deconet-PaymentsSplitting-dApp",
+  "version": "0.0.1",
+  "description": "",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "coverage": "./node_modules/.bin/solidity-coverage"
+  },
+  "author": "Chris Cassano / Deconet",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@optionality.io/clone-factory": "^0.1.6",
+    "bignumber": "^1.1.0",
+    "bignumber.js": "^7.2.1",
+    "ethereumjs-tx": "^1.3.3",
+    "openzeppelin-solidity": "1.12.0",
+    "solc": "^0.4.25",
+    "truffle-contract": "^3.0.4",
+    "truffle-hdwallet-provider": "0.0.6",
+    "uuid": "^3.2.1",
+    "web3": "^1.0.0-beta.34"
+  },
+  "devDependencies": {
+    "solidity-coverage": "^0.5.11"
+  }
+}
