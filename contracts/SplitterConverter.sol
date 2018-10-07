@@ -124,11 +124,8 @@ contract SplitterConverter {
 
     ERC20 daiToken = ERC20(0xaD6D458402F60fD3Bd25163575031ACDce07538D);
 
-    function () payable public {
-        emit FundsReceived(msg.value);
-    }
 
-    function setUp(address[] addresses, uint8[] shares, ERC20[] outCurrencies) public {
+    constructor(address[] addresses, uint8[] shares, ERC20[] outCurrencies) {
         require(receivers.length == 0, "Contract can only be set up once");
         require(addresses.length == shares.length && shares.length == outCurrencies.length, "Bad input params");
         uint shareSum = 0;
@@ -139,9 +136,27 @@ contract SplitterConverter {
         require(shareSum == 100, "The sum of user shares should be 100");
     }
 
+    function () payable public {
+        emit FundsReceived(msg.value);
+    }
+
+    function getReceiversLength() public view returns (uint) {
+        return receivers.length;
+    }
+
+    function getReceiver(uint idx) public view returns (address outAddress, uint8 share, address outCurrency) {
+        Receiver memory receiver = receivers[idx];
+        return (
+            receiver.outAddress,
+            receiver.share,
+            receiver.outCurrency
+        );
+    }
+
     function withdraw() public {
         uint ethBalance = address(this).balance;
         uint daiBalance = daiToken.balanceOf(address(this));
+        if (ethBalance == 0 && daiBalance == 0) return;
         for(uint i = 0; i < receivers.length; i++){
             Receiver memory receiver = receivers[i];
             uint ethReceiverShare = ethBalance / 100 * receiver.share;

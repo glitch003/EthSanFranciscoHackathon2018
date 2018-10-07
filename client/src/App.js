@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import SplitterConverterFactory from "./contracts/SplitterConverterFactory.json";
+// import SplitterConverterFactory from "./contracts/SplitterConverterFactory.json";
+import SplitterConverter from "./contracts/SplitterConverter.json";
 import getWeb3 from "./utils/getWeb3";
 import truffleContract from "truffle-contract";
 
@@ -19,9 +20,9 @@ import Tooltip from '@material-ui/core/Tooltip';
 import Checkbox from '@material-ui/core/Checkbox';
 import TableFooter from '@material-ui/core/TableFooter';
 import FormControl from '@material-ui/core/FormControl';
-import InputLabel from '@material-ui/core/InputLabel';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import { lighten } from '@material-ui/core/styles/colorManipulator';
 
@@ -40,7 +41,7 @@ const styles = theme => ({
     width: '100%',
     marginTop: theme.spacing.unit * 3,
     overflowX: 'auto',
-    maxWidth: 1024,
+    maxWidth: 1440,
     marginLeft: 'auto',
     marginRight: 'auto'
   },
@@ -91,6 +92,9 @@ const styles = theme => ({
   selectEmpty: {
     marginTop: theme.spacing.unit * 2,
   },
+  progress: {
+    margin: theme.spacing.unit * 2,
+  },
 });
 
 const tokenPairs = [{"symbol":"ETH","cmcName":"ETH","name":"Ethereum","decimals":18,"contractAddress":"0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},{"symbol":"KNC","cmcName":"KNC","name":"Kyber Network","decimals":18,"contractAddress":"0x4E470dc7321E84CA96FcAEDD0C8aBCebbAEB68C6"},{"symbol":"OMG","cmcName":"OMG","name":"OmiseGO","decimals":18,"contractAddress":"0x4BFBa4a8F28755Cb2061c413459EE562c6B9c51b"},{"symbol":"SNT","cmcName":"SNT","name":"Status Network","decimals":18,"contractAddress":"0xbF5d8683b9BE6C43fcA607eb2a6f2626A18837a6"},{"symbol":"ELF","cmcName":"ELF","name":"AELF","decimals":18,"contractAddress":"0x9Fcc27c7320703c43368cf1A4bf076402cd0D6B4"},{"symbol":"POWR","cmcName":"POWR","name":"Power Ledger","decimals":6,"contractAddress":"0xa577731515303F0C0D00E236041855A5C4F114dC"},{"symbol":"MANA","cmcName":"MANA","name":"Decentraland","decimals":18,"contractAddress":"0xf5E314c435B3B2EE7c14eA96fCB3307C3a3Ef608"},{"symbol":"BAT","cmcName":"BAT","name":"Basic Attention Token","decimals":18,"contractAddress":"0xDb0040451F373949A4Be60dcd7b6B8D6E42658B6"},{"symbol":"REQ","cmcName":"REQ","name":"Request","decimals":18,"contractAddress":"0xb43D10BbE7222519Da899B72bF2c7f094b6F79D7"},{"symbol":"GTO","cmcName":"GTO","name":"GIFTO","decimals":5,"contractAddress":"0xe55c607d58c53b2B06A8E38f67F4c0FcAeEd2c31"},{"symbol":"RDN","cmcName":"RDN","name":"Raiden","decimals":18,"contractAddress":"0x5422Ef695ED0B1213e2B953CFA877029637D9D26"},{"symbol":"APPC","cmcName":"APPC","name":"AppCoins","decimals":18,"contractAddress":"0x2799f05B55d56be756Ca01Af40Bf7350787F48d4"},{"symbol":"ENG","cmcName":"ENG","name":"Enigma","decimals":8,"contractAddress":"0x95cc8d8f29D0f7fcC425E8708893E759d1599c97"},{"symbol":"SALT","cmcName":"SALT","name":"Salt","decimals":8,"contractAddress":"0xB47f1A9B121BA114d5e98722a8948e274d0F4042"},{"symbol":"BQX","cmcName":"BQX","name":"Ethos","decimals":8,"contractAddress":"0x9504A86A881F63Da06302FB3639d4582022097DB"},{"symbol":"ADX","cmcName":"ADX","name":"AdEx","decimals":4,"contractAddress":"0x499990DB50b34687CDaFb2C8DaBaE4E99d6F38A7"},{"symbol":"AST","cmcName":"AST","name":"AirSwap","decimals":4,"contractAddress":"0xeF06F410C26a0fF87b3a43927459Cce99268a2eF"},{"symbol":"RCN","cmcName":"RCN","name":"Ripio Credit Network","decimals":18,"contractAddress":"0x99338aa9218C6C23AA9d8cc2f3EFaf29954ea26B"},{"symbol":"ZIL","cmcName":"ZIL","name":"Zilliqa","decimals":12,"contractAddress":"0xaD78AFbbE48bA7B670fbC54c65708cbc17450167"},{"symbol":"DAI","cmcName":"DAI","name":"DAI","decimals":18,"contractAddress":"0xaD6D458402F60fD3Bd25163575031ACDce07538D"},{"symbol":"LINK","cmcName":"LINK","name":"Chain Link","decimals":18,"contractAddress":"0xb4f7332ed719Eb4839f091EDDB2A3bA309739521"},{"symbol":"IOST","cmcName":"IOST","name":"IOStoken","decimals":18,"contractAddress":"0x27db28a6C4ac3D82a08D490cfb746E6F02bC467C"},{"symbol":"STORM","cmcName":"STORM","name":"Storm","decimals":18,"contractAddress":"0x8FFf7De21de8ad9c510704407337542073FDC44b"},{"symbol":"BBO","cmcName":"BBO","name":"BigBom","decimals":18,"contractAddress":"0xa94758d328af7ef1815e73053e95b5F86588C16D"},{"symbol":"COFI","cmcName":"COFI","name":"ConFi","decimals":18,"contractAddress":"0xb91786188f8d4e35d6d67799e9f162587bf4da03"},{"symbol":"MOC","cmcName":"MOC","name":"Moss Coin","decimals":18,"contractAddress":"0x1742c81075031b8f173d2327e3479d1fc3feaa76"},{"symbol":"BITX","cmcName":"BITX","name":"BitScreenerToken","decimals":18,"contractAddress":"0x7a17267576318efb728bc4a0833e489a46ba138f"}]
@@ -101,6 +105,7 @@ class App extends Component {
     accounts: null,
     contract: null,
     loaded: false,
+    deploying: false,
     newContractAddress: null,
     distributions: [
       {
@@ -127,15 +132,17 @@ class App extends Component {
       const accounts = await web3.eth.getAccounts();
 
       // Get the contract instance.
-      const Contract = truffleContract(SplitterConverterFactory);
-      Contract.setProvider(web3.currentProvider);
-      const instance = await Contract.deployed();
+      // const Contract = truffleContract(SplitterConverterFactory);
+      // Contract.setProvider(web3.currentProvider);
+      // const instance = await Contract.deployed();
 
       // console.log(instance)
 
+      window.web3js = web3;
+
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, contract: instance, loaded: true });
+      this.setState({ web3, accounts, loaded: true });
 
        // refresh if network or account changes
       setInterval(this.checkIfMetamaskChanged.bind(this), 500)
@@ -156,32 +163,69 @@ class App extends Component {
     })
   }
 
-  deploy() {
-    // if (this.totalPercentages() !== 100) {
-    //   alert('The sum of all percentages should equal exactly 100%.  Please adjust your percentages until the sum is 100%');
-    //   return;
-    // }
-    // const { distributions } = this.state;
-    // const destinations = distributions.map(d => d.address)
-    // if (destinations.filter(d => d.length !== 42).length) {
-    //   alert('Please enter addresses for every row')
-    //   return
-    // }
-    // console.log(destinations)
-    // console.log('deploying')
-    // const percentages = distributions.map(d => d.percentage)
-    // console.log(percentages)
-    const destinations = ["0xb962537314b11c6bcd6d9ff63feb048a9e91e7ae", "0xa2266e01703e4ca0ffc4b374635acdbdabda7793"]
-    const percentages = [90,10]
-    // eth and DAI
-    const outCurrencies = ["0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", "0xaD6D458402F60fD3Bd25163575031ACDce07538D"]
-    this.state.contract.createSplitterConverter(destinations, percentages, outCurrencies, { from: this.state.accounts[0]})
-    .then(receipt => {
-      console.log(receipt)
-      const { logs } = receipt;
-      const newContractAddress = logs[0].args.newCloneAddress;
-      this.setState({newContractAddress})
+  withdraw() {
+    const { web3, newContractAddress, accounts, contract } = this.state;
+    // console.log('abi: ', SplitterConverter.abi)
+    // const splitterContract = new web3.eth.Contract(SplitterConverter.abi, newContractAddress);
+    // console.log('splitterContract', splitterContract)
+    contract.methods.withdraw().send({ from: accounts[0] })
+    .on('transactionHash', (hash) => {
+      console.log(hash);
+      const url = `https://ropsten.etherscan.io/tx/${hash}`
+      window.open(url, '_blank');
     })
+    .on('error', console.error); // If a out of gas error, the second parameter is the receipt
+  }
+
+  deploy() {
+    const { web3, accounts } = this.state;
+    if (this.totalPercentages() !== 100) {
+      alert('The sum of all percentages should equal exactly 100%.  Please adjust your percentages until the sum is 100%');
+      return;
+    }
+    const { distributions } = this.state;
+    const destinations = distributions.map(d => d.address)
+    if (destinations.filter(d => d.length !== 42).length) {
+      alert('Please enter addresses for every row')
+      return
+    }
+    console.log(destinations)
+    console.log('deploying')
+    const percentages = distributions.map(d => d.percentage)
+    console.log(percentages)
+
+    const outCurrencies = distributions.map(d => {
+      for(let i = 0; i < tokenPairs.length; i++){
+        if (tokenPairs[i].symbol == d.outCurrency) {
+          return tokenPairs[i].contractAddress;
+        }
+      }
+    })
+    console.log(outCurrencies)
+
+    // const destinations = ["0xb962537314b11c6bcd6d9ff63feb048a9e91e7ae", "0xa2266e01703e4ca0ffc4b374635acdbdabda7793"]
+    // const percentages = [90,10]
+    // // eth and DAI
+    // const outCurrencies = ["0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE", "0xaD6D458402F60fD3Bd25163575031ACDce07538D"]
+
+    const splitterContract = new web3.eth.Contract(SplitterConverter.abi);
+    splitterContract.deploy({
+      data: SplitterConverter.bytecode,
+      arguments: [destinations, percentages, outCurrencies]
+    }).send({ from: accounts[0] })
+    .on('transactionHash', (hash) => {
+      this.setState({deploying: true})
+    })
+    .on('receipt', (receipt) => {
+      console.log(receipt)
+
+      this.setState({
+        newContractAddress: receipt.contractAddress,
+        deploying: false,
+        contract: new web3.eth.Contract(SplitterConverter.abi, receipt.contractAddress)
+      })
+    })
+    .on('error', console.error); // If a out of gas error, the second parameter is the receipt.
   }
 
   handleChange(idx, field, event) {
@@ -364,15 +408,24 @@ class App extends Component {
   }
 
   renderNewContractAddress(){
-    const { newContractAddress } = this.state;
+    const { newContractAddress, deploying } = this.state;
     const { classes } = this.props;
+
+    if (!newContractAddress && deploying) {
+      return (
+        <Paper className={classes.root}>
+          <h2>Deploying...</h2>
+          <CircularProgress className={classes.progress} />
+        </Paper>
+      )
+    }
 
     if (!newContractAddress) return;
 
     return (
       <Paper className={classes.root}>
         <h2>Contract deployed at the address below</h2>
-        <p>Send money to it and it will be split</p>
+        <p>Send ETH or DAI to it and it will be split</p>
         <div>
           <Input
             id='newContractAddress'
@@ -386,26 +439,43 @@ class App extends Component {
             </IconButton>
           </Tooltip>
         </div>
+        <div>
+          Once the contract has a balance of ETH or DAI (or both), you can withdraw:
+        </div>
+        <div>
+          <Button variant="raised" color="secondary" className={classes.button} style={{marginBottom: 40}} onClick={this.withdraw.bind(this)}>
+            Withdraw
+          </Button>
+        </div>
       </Paper>
     )
   }
 
   render() {
     const { classes } = this.props;
+    const { newContractAddress, deploying } = this.state;
 
     if (!this.state.loaded) {
-      return <div>Loading Web3, accounts, and contract...</div>;
+      return (
+        <div className="App">
+          <h1>Loading Web3, accounts, and contract...</h1>
+          <div><CircularProgress className={classes.progress} /></div>
+        </div>
+      );
     }
 
     return (
       <div className="App">
-        <h1>Deconet Payment Splitting dApp</h1>
-        <p>Enter receivers and the percentages they should receive, and deploy.  Any ETH or DAI that is sent into the contract will be split according to the percentages you've chosen.</p>
+        <h1>Payment Splitting and Converting dApp</h1>
+        <p>Enter receivers, the percentages they should receive, and their desired output currencies, and deploy.  Any ETH or DAI that is sent into the contract will be split according to the percentages you've chosen.</p>
         {this.renderTable()}
         {this.renderNewContractAddress()}
-        <Button variant="raised" color="primary" className={classes.button} onClick={this.deploy.bind(this)}>
-          Deploy
-        </Button>
+        {newContractAddress == null && !deploying ?
+          <Button variant="raised" color="primary" className={classes.button} onClick={this.deploy.bind(this)}>
+            Deploy
+          </Button>
+          : null
+        }
       </div>
     );
   }
