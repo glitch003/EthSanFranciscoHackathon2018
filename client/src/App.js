@@ -292,7 +292,7 @@ class App extends Component {
       sumColor = 'rgba(255, 100, 100, 0.70)'
     }
 
-    const showSelectColumn = windowWidth > 400;
+    const showSelectColumn = windowWidth > 1000;
 
     return (
       <Paper className={classes.root}>
