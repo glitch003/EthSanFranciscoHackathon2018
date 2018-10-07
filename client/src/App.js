@@ -46,7 +46,7 @@ const styles = theme => ({
     marginRight: 'auto'
   },
   table: {
-    minWidth: 700,
+    minWidth: 200,
   },
   button: {
     marginTop: 50
@@ -87,7 +87,7 @@ const styles = theme => ({
   },
   formControl: {
     margin: theme.spacing.unit,
-    minWidth: 120,
+    minWidth: 90,
   },
   selectEmpty: {
     marginTop: theme.spacing.unit * 2,
@@ -120,7 +120,8 @@ class App extends Component {
         selected: false,
         outCurrency: 'ETH'
       }
-    ]
+    ],
+    windowWidth: null
   };
 
   async componentDidMount() {
@@ -142,7 +143,7 @@ class App extends Component {
 
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
-      this.setState({ web3, accounts, loaded: true });
+      this.setState({ web3, accounts, loaded: true, windowWidth: window.innerWidth });
 
        // refresh if network or account changes
       setInterval(this.checkIfMetamaskChanged.bind(this), 500)
@@ -279,7 +280,7 @@ class App extends Component {
   }
 
   renderTable() {
-    const { distributions } = this.state;
+    const { distributions, windowWidth } = this.state;
     const { classes } = this.props;
     const numSelected = this.selectedDistributions().length;
     const totalPercentages = this.totalPercentages();
@@ -290,6 +291,8 @@ class App extends Component {
     } else if (totalPercentages > 100) {
       sumColor = 'rgba(255, 100, 100, 0.70)'
     }
+
+    const showSelectColumn = windowWidth > 400;
 
     return (
       <Paper className={classes.root}>
@@ -327,7 +330,7 @@ class App extends Component {
         <Table className={classes.table}>
           <TableHead>
             <TableRow>
-              <TableCell>Select</TableCell>
+              { showSelectColumn ? <TableCell>Select</TableCell> : null }
               <TableCell>Address</TableCell>
               <TableCell>Percentage</TableCell>
               <TableCell>Output Currency</TableCell>
@@ -337,9 +340,12 @@ class App extends Component {
             {distributions.map((row, idx) => {
               return (
                 <TableRow key={idx}>
-                  <TableCell component="th" scope="row">
-                    <Checkbox checked={row.selected} onClick={this.handleChange.bind(this, idx, 'selected')} />
-                  </TableCell>
+                  { showSelectColumn ?
+                    <TableCell component="th" scope="row">
+                      <Checkbox checked={row.selected} onClick={this.handleChange.bind(this, idx, 'selected')} />
+                    </TableCell>
+                    : null
+                  }
                   <TableCell>
                     <Input
                       value={row.address}
@@ -352,21 +358,38 @@ class App extends Component {
                     />
                   </TableCell>
                   <TableCell style={{width: 310}}>
-                    <Input
-                      value={row.percentage}
-                      className={classes.inputSlider}
-                      inputProps={{
-                        'aria-label': 'Percentage',
-                      }}
-                      onChange={this.handleChange.bind(this, idx, 'percentage')}
-                      type='range'
-                      fullWidth
-                      endAdornment={
-                        <InputAdornment className={classes.inputAdornment} position="end">
-                          {row.percentage}%
-                        </InputAdornment>
-                      }
-                    />
+                    { showSelectColumn ?
+                      <Input
+                        value={row.percentage}
+                        className={classes.inputSlider}
+                        inputProps={{
+                          'aria-label': 'Percentage',
+                        }}
+                        onChange={this.handleChange.bind(this, idx, 'percentage')}
+                        type='range'
+                        fullWidth
+                        endAdornment={
+                          <InputAdornment className={classes.inputAdornment} position="end">
+                            {row.percentage}%
+                          </InputAdornment>
+                        }
+                      />
+                      :
+                      <Input
+                        value={row.percentage}
+                        className={classes.input}
+                        inputProps={{
+                          'aria-label': 'Percentage',
+                        }}
+                        onChange={this.handleChange.bind(this, idx, 'percentage')}
+                        fullWidth
+                        endAdornment={
+                          <InputAdornment className={classes.inputAdornment} position="end">
+                            %
+                          </InputAdornment>
+                        }
+                      />
+                    }
                   </TableCell>
                   <TableCell>
                     <FormControl className={classes.formControl}>
@@ -467,7 +490,7 @@ class App extends Component {
     return (
       <div className="App">
         <h1>Payment Splitting and Converting dApp</h1>
-        <p>Enter receivers, the percentages they should receive, and their desired output currencies, and deploy.  Any ETH or DAI that is sent into the contract will be split according to the percentages you've chosen.</p>
+        <p>Enter receivers, the percentages they should receive, and their desired output currencies, and deploy.  Any ETH or DAI that is sent into the contract will be split according to the percentages you've chosen then converted into the desired output currency.</p>
         {this.renderTable()}
         {this.renderNewContractAddress()}
         {newContractAddress == null && !deploying ?
