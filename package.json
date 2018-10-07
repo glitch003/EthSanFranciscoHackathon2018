@@ -20,7 +20,7 @@
     "openzeppelin-solidity": "1.12.0",
     "solc": "^0.4.25",
     "truffle-contract": "^3.0.4",
-    "truffle-hdwallet-provider": "0.0.6",
+    "truffle-hdwallet-provider": "^0.0.6",
     "uuid": "^3.2.1",
     "web3": "^1.0.0-beta.34"
   },
